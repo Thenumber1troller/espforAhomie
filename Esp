@@ -1,0 +1,48 @@
+local BOX_COLOR = Color3.fromRGB(255, 255, 255)
+local BOX_THICKNESS = 1
+
+local function CreateBoxESP(targetPlayer)
+    local box = Drawing.new("Square")
+    box.Thickness = BOX_THICKNESS
+    box.Filled = false
+    box.Transparency = 1
+    box.Visible = false
+
+    local connection
+    connection = game:GetService("RunService").RenderStepped:Connect(function()
+        local char = targetPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if not targetPlayer or not targetPlayer.Parent or not char or not char.Parent or not root then
+            box:Remove()
+            connection:Disconnect()
+            return
+        end
+
+        local pPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+        
+        if onScreen then
+            local size = 2500 / pPos.Z
+            
+            box.Size = Vector2.new(size, size * 1.5)
+            box.Position = Vector2.new(pPos.X - box.Size.X / 2, pPos.Y - box.Size.Y / 2)
+            box.Color = BOX_COLOR
+            box.Visible = true
+        else
+            box.Visible = false
+        end
+    end)
+end
+
+for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+    if player ~= game:GetService("Players").LocalPlayer then
+        task.spawn(CreateBoxESP, player)
+    end
+end
+
+game:GetService("Players").PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(0.5) -- Small delay to ensure character is fully loaded
+        CreateBoxESP(player)
+    end)
+end)
